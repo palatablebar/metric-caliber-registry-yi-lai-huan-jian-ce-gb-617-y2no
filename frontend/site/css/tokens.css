@@ -1,0 +1,57 @@
+/* 设计令牌｜图书馆卡片目录：墨绿 + 纸黄 + 索引号，衬线正文。
+   全部 oklch()；不出现纯黑纯白。双字体：Fraunces（拉丁编号/标题）+ Noto Serif SC（正文），
+   索书号等定长信息用 JetBrains Mono。 */
+:root {
+  /* 纸张：从抽屉深处的旧卡到新卡 */
+  --paper: oklch(0.958 0.018 92);
+  --paper-2: oklch(0.929 0.024 90);
+  --paper-3: oklch(0.892 0.03 88);
+  --card: oklch(0.976 0.012 94);
+  --card-edge: oklch(0.845 0.028 88);
+
+  /* 墨水：墨绿偏冷，不用纯黑 */
+  --ink: oklch(0.255 0.028 162);
+  --ink-soft: oklch(0.415 0.022 160);
+  --ink-faint: oklch(0.575 0.018 158);
+  --rule: oklch(0.822 0.024 88);
+  --rule-strong: oklch(0.688 0.032 90);
+
+  /* 主色：书脊墨绿 */
+  --accent: oklch(0.375 0.062 166);
+  --accent-soft: oklch(0.492 0.052 166);
+  --accent-wash: oklch(0.905 0.028 156);
+  --accent-ink: oklch(0.955 0.014 150);
+
+  /* 索引号/钢印：砖红 */
+  --stamp: oklch(0.478 0.108 40);
+  --stamp-wash: oklch(0.918 0.036 52);
+
+  --ok: oklch(0.462 0.068 156);
+  --ok-wash: oklch(0.918 0.028 158);
+  --warn: oklch(0.588 0.096 78);
+  --warn-wash: oklch(0.936 0.032 86);
+  --danger: oklch(0.498 0.128 32);
+  --danger-wash: oklch(0.925 0.034 36);
+  --info: oklch(0.492 0.052 246);
+  --info-wash: oklch(0.925 0.022 246);
+
+  /* 字体 */
+  --font-display: 'Fraunces', 'Songti SC', 'Noto Serif SC', serif;
+  --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+
+  --fs-xs: 0.7rem;
+  --fs-sm: 0.8rem;
+  --fs-md: 0.92rem;
+  --fs-lg: 1.14rem;
+  --fs-xl: clamp(1.46rem, 2vw, 2.05rem);
+  --fs-2xl: clamp(2rem, 3.2vw, 3rem);
+
+  --pad: clamp(14px, 1.5vw, 26px);
+  --rail: 232px;
+  --radius: 2px;
+  --radius-card: 4px;
+  --shadow-card: 0 1px 0 var(--card-edge), 0 14px 26px -24px oklch(0.32 0.03 160 / 0.5);
+  --shadow-drawer: -18px 0 50px -30px oklch(0.28 0.03 160 / 0.55);
+  --ease: cubic-bezier(0.18, 0.86, 0.32, 1);
+}
