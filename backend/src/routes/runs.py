@@ -38,3 +38,13 @@ def create_run(
     principal: dict = Depends(require_roles(*RUN_CREATE_ROLES)),
 ) -> dict:
     return run_controller.create_run(db, payload.model_dump(), principal, request)
+
+
+@router.post("/{run_id}/resume", status_code=200)
+def resume_run(
+    run_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    principal: dict = Depends(require_roles(*RUN_CREATE_ROLES)),
+) -> dict:
+    return run_controller.resume_run(db, run_id, principal, request)

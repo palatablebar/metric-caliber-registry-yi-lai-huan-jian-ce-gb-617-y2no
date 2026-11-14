@@ -103,9 +103,53 @@ CREATE TABLE runs (
     metrics         JSON,
     log_text        TEXT,
     seed_key        VARCHAR(120) UNIQUE,
+    failure_info    JSON,
     started_at      TIMESTAMP    NOT NULL,
     finished_at     TIMESTAMP
 );
+
+-- 校验运行的隔离候选：切换前所有中间产物只落候选表，线上表保持上一份可用结果
+CREATE TABLE run_candidates (
+    id              SERIAL PRIMARY KEY,
+    run_id          INTEGER      NOT NULL UNIQUE REFERENCES runs(id) ON DELETE CASCADE,
+    stage           VARCHAR(20)  NOT NULL DEFAULT 'parse',  -- parse/graph/analyze/cutover/done
+    parsed_codes    JSON         NOT NULL DEFAULT '[]'::json, -- 已完成解析的指标编码（断点续跑）
+    failure_info    JSON,                                    -- 最近一次失败位置
+    attempts        INTEGER      NOT NULL DEFAULT 1,         -- 同一次运行的尝试次数（重试不新增 run）
+    created_at      TIMESTAMP    NOT NULL,
+    updated_at      TIMESTAMP    NOT NULL
+);
+
+CREATE TABLE candidate_formulas (
+    id              SERIAL PRIMARY KEY,
+    candidate_id    INTEGER      NOT NULL REFERENCES run_candidates(id) ON DELETE CASCADE,
+    metric_id       INTEGER      NOT NULL,
+    metric_code     VARCHAR(48)  NOT NULL,
+    formula_id      INTEGER,
+    dsl_text        TEXT         NOT NULL DEFAULT '',
+    parse_status    VARCHAR(12)  NOT NULL DEFAULT 'error',
+    parse_error     TEXT,
+    parsed          JSON         NOT NULL DEFAULT '{}',
+    signature       VARCHAR(64)  NOT NULL DEFAULT '',
+    created_at      TIMESTAMP    NOT NULL,
+    CONSTRAINT uq_candidate_formula_metric UNIQUE (candidate_id, metric_code)
+);
+CREATE INDEX ix_candidate_formulas_candidate ON candidate_formulas (candidate_id);
+
+CREATE TABLE candidate_dependencies (
+    id              SERIAL PRIMARY KEY,
+    candidate_id    INTEGER      NOT NULL REFERENCES run_candidates(id) ON DELETE CASCADE,
+    from_metric_id  INTEGER      NOT NULL,
+    from_metric_code VARCHAR(48) NOT NULL,
+    kind            VARCHAR(12)  NOT NULL,
+    to_ref          VARCHAR(120) NOT NULL,
+    to_metric_id    INTEGER,
+    weight          INTEGER      NOT NULL DEFAULT 1,
+    note            VARCHAR(200),
+    created_at      TIMESTAMP    NOT NULL,
+    CONSTRAINT uq_candidate_dependency_edge UNIQUE (candidate_id, from_metric_id, kind, to_ref)
+);
+CREATE INDEX ix_candidate_dependencies_candidate ON candidate_dependencies (candidate_id);
 
 CREATE TABLE audit_logs (
     id              SERIAL PRIMARY KEY,

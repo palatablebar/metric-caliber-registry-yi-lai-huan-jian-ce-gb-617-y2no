@@ -8,6 +8,7 @@ ACTIONS: dict[str, str] = {
     "formula.parse": "解析口径 DSL",
     "formula.save": "保存口径版本",
     "run.create": "发起校验运行",
+    "run.resume": "续跑失败校验",
     "run.complete": "校验运行完成",
     "change.create": "提交变更单",
     "change.approve": "批准变更单",

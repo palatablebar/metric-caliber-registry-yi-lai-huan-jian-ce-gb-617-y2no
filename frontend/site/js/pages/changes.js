@@ -133,7 +133,19 @@ export const changesPage = {
                   <dt>冲突 / 环</dt><dd>${esc(latest.metrics?.conflicts_total ?? 0)} 处冲突 / ${esc(latest.metrics?.cycles_total ?? 0)} 个环</dd>
                   <dt>依赖边</dt><dd class="mono">指标 ${esc(latest.metrics?.dep_edges?.metric ?? 0)} · 字段 ${esc(latest.metrics?.dep_edges?.field ?? 0)} · 报表 ${esc(latest.metrics?.dep_edges?.report ?? 0)}</dd>
                   <dt>日志</dt><dd class="tiny">${esc(latest.log_text || '—')}</dd>
-                </dl>`
+                  ${
+                    latest.status === 'failed'
+                      ? `<dt>失败位置</dt><dd class="tiny">阶段 <b>${esc(latest.failure_info?.stage || '—')}</b>${
+                          latest.failure_info?.metric_code ? ` · 指标 <b class="mono">${esc(latest.failure_info.metric_code)}</b>` : ''
+                        } · ${esc(latest.failure_info?.message || '')}</dd>`
+                      : ''
+                  }
+                </dl>
+                ${
+                  latest.status === 'failed' && can(ctx.user.role, 'run:create')
+                    ? '<button class="btn sm accent" id="run-resume" type="button">续跑该校验</button>'
+                    : ''
+                }`
               : emptyState({ title: '还没有校验运行', hint: '点右上角跑一次。' })
           }
         </div>
@@ -196,6 +208,15 @@ export const changesPage = {
       try {
         const run = await api.post('/api/runs', { trigger: 'manual' });
         toast(`校验完成：${run.output_count} 条问题`);
+        await changesPage.render(view, ctx);
+      } catch (err) {
+        toast(errorMessage(err), 'err');
+      }
+    });
+    view.querySelector('#run-resume')?.addEventListener('click', async () => {
+      try {
+        const run = await api.post(`/api/runs/${latest.id}/resume`, {});
+        toast(run.status === 'success' ? `续跑完成：${run.output_count} 条问题` : '校验仍未完成，已保留失败位置');
         await changesPage.render(view, ctx);
       } catch (err) {
         toast(errorMessage(err), 'err');

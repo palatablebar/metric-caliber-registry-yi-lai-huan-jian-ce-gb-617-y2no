@@ -37,6 +37,28 @@ def create_run(db: Session, payload: dict, principal: dict, request: Request) ->
     return run_service.serialize(run)
 
 
+def resume_run(db: Session, run_id: int, principal: dict, request: Request) -> dict:
+    """续跑失败的校验：复用原运行与原候选，不新增运行记录。"""
+    run = run_service.resume_run(db, run_id)
+    audit_service.record(
+        db,
+        actor_email=principal["email"],
+        actor_role=principal["role"],
+        action="run.resume",
+        entity="run",
+        entity_id=run.id,
+        detail={
+            "run_no": run.run_no,
+            "status": run.status,
+            "issues": run.output_count,
+            "failure_info": run.failure_info,
+        },
+        ip=request.client.host if request.client else None,
+    )
+    db.commit()
+    return run_service.serialize(run)
+
+
 def list_runs(db: Session, **filters) -> dict:
     return run_service.list_runs(db, **filters)
 

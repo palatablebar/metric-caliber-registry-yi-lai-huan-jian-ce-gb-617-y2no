@@ -45,6 +45,18 @@
 
 横切能力（不计入业务模块）：登录（JWT）、审计、限流、worker 心跳、总览。
 
+### 校验运行的候选隔离与原子切换
+
+一次「跑校验」分四阶段：`parse → graph → analyze → cutover`，全部中间产物先写隔离候选表
+（`run_candidates` / `candidate_formulas` / `candidate_dependencies`），线上 `formulas` /
+`dependencies` 在切换前保持上一份可用结果，指标详情、依赖图与总览不会读到新旧混合数据：
+
+- **parse**：算法 A 逐指标解析，每个指标一个数据库保存点，结果写 `candidate_formulas`，进度记在 `parsed_codes`；
+- **graph / analyze**：候选依赖边全量重建、算法 B 环/冲突/影响面计算，均不碰线上表；
+- **cutover**：同一事务（保存点）内把候选解析结果应用到线上公式、整体替换线上依赖边，任一步失败整体回滚，旧口径不被覆盖；
+- 失败时运行置 `failed`，失败位置（阶段 / 指标编码 / 错误信息 / 时间）写 `runs.failure_info` 与候选头表；
+- `POST /api/runs/{id}/resume` 续跑**复用原 Run 与原候选，不新增运行记录**：parse 跳过 `parsed_codes` 中已完成的指标，从失败阶段继续。
+
 ## 4. 五个领域实体
 
 | 实体 | 表 | model | schema | service | controller / route | 前端 |
@@ -163,6 +175,8 @@ backend/
   src/{config,constants,controllers,middlewares,models,routes,schemas,services,utils}
     services/dsl_parser.py        # 算法 A
     services/graph_analysis.py    # 算法 B
+    services/staging_service.py   # 校验隔离候选：候选解析/候选边/断点续跑/单事务切换
+    models/run_candidate.py       # run_candidates / candidate_formulas / candidate_dependencies
   scripts/{seed_demo.py,demo_config.py,worker_healthcheck.sh}
   migrations/  tests/
 frontend/site/{index.html,css/{tokens,app}.css,js/{config,api,store,ui,app}.js,js/pages/*.js}
